@@ -108,10 +108,24 @@ Este proyecto es académico y forma parte de la asignatura de desarrollo e integ
 
 Cada integrante debe crear su archivo `.env` local basado en `credentials/.env.example`.
 
+### Stack Técnico Actualizado 
+- **Embeddings:** HuggingFace (`sentence-transformers/all-MiniLM-L6-v2`, 384 dimensiones)
+- **Chat / Respuestas:** Groq (`llama-3.1-8b-instant`)
+- **Base Vectorial:** Pinecone (Index `proyecto-rag`, 384 dimensiones, métrica cosine)
+
+### Variables requeridas
+
 ```env
-GROQ_API_KEY=
-PINECONE_API_KEY=
-PINECONE_ENV=
+# APIs INDIVIDUALES (cada persona usa las suyas)
+HUGGINGFACE_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxxxxxxx
+GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# API COMPARTIDA (creada por Persona 1 y compartida con todos)
+PINECONE_API_KEY=pcsk_xxxxxxxxxxxxxxxxxxxxxxxxxx
+PINECONE_ENVIRONMENT=gcp-starter
+PINECONE_INDEX=proyecto-rag
+
+# Otros servicios (si aplican en tu canal)
 TWILIO_SID=
 TWILIO_TOKEN=
 TELEGRAM_BOT_TOKEN=
