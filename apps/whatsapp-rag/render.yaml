@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: whatsapp-rag
+    env: node
+    plan: free
+    region: oregon
+    buildCommand: npm ci
+    startCommand: node src/server.js
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: TRANSFORMERS_CACHE
+        value: /opt/render/project/.cache/transformers
+      - key: PORT
+        value: 3000
+      # Define las demás en dashboard (secrets):
+      # VERIFY_TOKEN, WHATSAPP_PHONE_NUMBER_ID, META_ACCESS_TOKEN,
+      # PINECONE_API_KEY, PINECONE_INDEX

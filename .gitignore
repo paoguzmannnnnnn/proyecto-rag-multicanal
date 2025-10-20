@@ -143,4 +143,4 @@ vite.config.ts.timestamp-*
 .env
 credentials/
 credentials.txt
-*.key
+*.key.DS_Store
