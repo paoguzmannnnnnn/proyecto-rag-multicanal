@@ -1,0 +1,195 @@
+{
+  "name": "1-procesar-pdf.json",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "upload-pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "1b4ed6b5-a6ee-4d32-8690-e4252ec7c8ea",
+      "name": "Webhook - upload - pdf",
+      "webhookId": "7c9b4deb-2141-4c7f-908a-7059f7dc1be7"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0276d596-838a-42d7-a6cc-e1ca93be4a84",
+              "name": "text",
+              "value": "Este es un texto de ejemplo que simula el contenido de un PDF",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "4b5e2521-d9df-416c-9981-64a1bb26ee7e",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Tomamos el texto del nodo anterior\nconst text = $json.text || \"\";\nconst words = text.split(/\\s+/).filter(Boolean);\nconst chunkSize = 500;\nconst chunks = [];\n\nfor (let i = 0; i < words.length; i += chunkSize) {\n  const chunkWords = words.slice(i, i + chunkSize);\n  chunks.push({\n    json: {\n      text: chunkWords.join(\" \"),\n      chunk_id: Math.floor(i / chunkSize),\n      doc_name: \"documento_ejemplo\"\n    }\n  });\n}\n\nreturn chunks;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "bfcbfb6c-17cc-4c18-86eb-7a63cacbe6ce",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "42717616-6327-4a02-80dd-d20c0c16a4c0",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Tomamos el resultado del nodo anterior\nconst hfResponse = $input.item.json;\n\n// Si el resultado es un array (como [ [0.23, -0.45, ...] ]), tomamos el primero\nconst vector = Array.isArray(hfResponse[0]) ? hfResponse[0] : hfResponse;\n\n// Creamos el formato que Pinecone necesita\nreturn [\n  {\n    json: {\n      id: `{{$json.doc_name}}_chunk_{{$json.chunk_id}}`,\n      values: vector,\n      metadata: {\n        text: $json.text,\n        doc_name: $json.doc_name,\n        chunk_id: $json.chunk_id\n      }\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "e7bfa7a5-8110-4d31-b2cb-c7b7a8d310d4",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://us-east-1.pinecone.io/vectors/upsert",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Api-Key",
+              "value": "pcsk_4fhT8u_Gxg5EHuZ43toP8LrAEMaiUhBhLrtMfjVX6zsmmqac7fYK8trgkUcjdu8iq8PA62"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "vectors",
+              "value": "==[{\"id\": $json.id, \"values\": $json.values, \"metadata\": $json.metadata}]"
+            },
+            {
+              "name": "namespace",
+              "value": "\"ragagent\""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "ad1c0af7-8e1c-4171-bbac-cda1bf4288c1",
+      "name": "HTTP Request1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook - upload - pdf": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "fd7afec0-39f9-4c3d-ae48-b9f8bc3e8242",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4fcdc1c5b2d211410d0ec78003ec8e3d9dcbc53e3c72bd4ba5ab7e50a73c7f0b"
+  },
+  "id": "BiekB2fHAfWL6CHM",
+  "tags": []
+}
