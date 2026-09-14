@@ -1,136 +1,44 @@
-# proyecto-rag-multicanal
-Repositorio principal del Proyecto RAG Multicanal
+Multichannel RAG Chatbot
 
-##  Objetivo general
+A Retrieval-Augmented Generation (RAG) system that answers questions from your own PDF documents, accessible from multiple messaging channels — Telegram, Slack, and WhatsApp.
 
-Desarrollar un flujo de trabajo completo que permita:
-1. Cargar y procesar documentos PDF.
-2. Indexar la información en una base vectorial.
-3. Consultar el contenido desde distintos canales de mensajería (Telegram, Slack y WhatsApp).
-4. Unificar la lógica mediante **workflows en n8n**.
+Built for a university course (individual project).
 
+Stack: n8n · Pinecone · Groq (LLaMA 3.1) · HuggingFace embeddings
 
----
+What it does
+Loads and processes PDF documents.
+Indexes their content into a vector database.
+Lets users ask questions in natural language from Telegram, Slack, or WhatsApp.
+Retrieves the most relevant content and generates an answer with an LLM.
 
-## Roles del equipo
+The whole flow is orchestrated with n8n workflows, so each channel shares the same retrieval and answering logic.
 
-| Persona | Rol | Rama asignada | Descripción |
-
-| **P1** | Product Owner | `persona-1-backend` | Supervisa requerimientos y validación de entregas. |
-
-| **P2** | Dev Telegram | `persona-2-telegram` | Desarrolla e integra el bot de Telegram. |
-
-| **P3** | Dev Slack | `persona-3-slack` | Desarrolla e integra el bot de Slack. |
-
-| **P4** | Dev WhatsApp | `persona-4-whatsapp` | Desarrolla e integra el bot de WhatsApp (Twilio API). |
-
-| **P5** | QA + DevOps | `main` + revisión | Encargada del setup del repositorio, revisión de código, control de calidad e integración. |
-
----
-
-##  Estructura del repositorio
-
+Tech stack
+Orchestration: n8n (workflows for PDF processing and each chat channel)
+Embeddings: HuggingFace — sentence-transformers/all-MiniLM-L6-v2 (384 dimensions)
+Vector database: Pinecone (cosine similarity)
+LLM / answers: Groq — llama-3.1-8b-instant
+Channels: Telegram Bot API, Slack API, WhatsApp (Twilio API)
+Tunneling for webhooks: ngrok
+How it's organized
 proyecto-rag-multicanal/
-├─ README.md
-├─ .gitignore
-├─ BACKLOG.md
-├─ workflows/
-│ ├─ 1-procesar-pdf.json
-│ ├─ 2-bot-telegram.json
-│ ├─ 3-bot-slack.json
-│ └─ 4-bot-whatsapp.json
-├─ docs/
-│ ├─ arquitectura-backend.md
-│ ├─ persona-1-backend.md
-│ ├─ persona-2-telegram.md
-│ ├─ persona-3-slack.md
-│ ├─ persona-4-whatsapp.md
-│ ├─ manual-usuario.md
-│ └─ testing-report.md
-├─ sprints/
-│ ├─ sprint-planning.md
-│ ├─ daily-standups.md
-│ └─ sprint-retrospective.md
-├─ credentials/
-│ └─ .env.example
-├─ tests/
-│ └─ pdfs/
-└─ assets/
-└─ screenshots/
+├─ workflows/        # n8n workflows: PDF processing + one per channel
+├─ docs/             # architecture, per-channel notes, user manual, testing report
+├─ sprints/          # planning, standups, retrospective
+└─ tests/pdfs/       # sample PDFs for testing
 
-##  Flujo de trabajo
+Development followed a clean Git workflow: work on feature branches, open Pull Requests into main, and keep main protected (no direct pushes).
 
-Ramas principales
-
-main - rama protegida (solo merges por PR).
-
-persona-1-backend - backend y RAG.
-
-persona-2-telegram - bot de Telegram.
-
-persona-3-slack - bot de Slack.
-
-persona-4-whatsapp - bot de WhatsApp.
-
-## Reglas del flujo Git
-Reglas del flujo Git
-
-1. Cada integrante trabaja solo en su rama asignada.
-2. Al completar una tarea, debe crear un Pull Request (PR) hacia main.
-3. Todo PR debe tener revisión y aprobación de al menos una persona (QA o Tech Lead).
-4. Ningún cambio se hace directamente en main.
-
-
-## Pruebas y control de calidad
-
-Todos los flujos (workflows) deben probarse localmente en n8n antes de hacer merge. Los resultados de pruebas se documentan en docs/testing-report.md.QA (P5) verifica consistencia de respuestas entre canales y registra incidencias en Issues.
-
-## Requisitos tecnicos
-
--n8n (para workflows)
--ngrok (para exponer webhooks)
--Pinecone (base vectorial)
--GROQ / OpenAI API (modelo de respuesta)
--Twilio API, Telegram Bot API, Slack API
-
-## Buenas practicas
-
--Commits cortos y descriptivos (por ejemplo: feat: conectar bot de Telegram con RAG).
--No subir archivos grandes o PDFs de prueba fuera de /tests/pdfs.
--Revisar Issues antes de empezar una tarea.
--Documentar avances en los archivos de /sprints.
-
-## Licencia
-
-Este proyecto es académico y forma parte de la asignatura de desarrollo e integración de sistemas.
-
-## Variables de entorno
-
-Cada integrante debe crear su archivo `.env` local basado en `credentials/.env.example`.
-
-### Stack Técnico Actualizado 
-- **Embeddings:** HuggingFace (`sentence-transformers/all-MiniLM-L6-v2`, 384 dimensiones)
-- **Chat / Respuestas:** Groq (`llama-3.1-8b-instant`)
-- **Base Vectorial:** Pinecone (Index `proyecto-rag`, 384 dimensiones, métrica cosine)
-
-### Variables requeridas
-
-```env
-# APIs INDIVIDUALES (cada persona usa las suyas)
-HUGGINGFACE_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxxxxxxx
-GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxxxxxxxx
-
-# API COMPARTIDA (creada por Persona 1 y compartida con todos)
-PINECONE_API_KEY=pcsk_xxxxxxxxxxxxxxxxxxxxxxxxxx
-PINECONE_ENVIRONMENT=gcp-starter
+Running it
+Create a .env from credentials/.env.example and add your own keys:
+HUGGINGFACE_TOKEN=your-token
+GROQ_API_KEY=your-key
+PINECONE_API_KEY=your-key
 PINECONE_INDEX=proyecto-rag
+# plus the channel keys you want to use (Telegram / Slack / Twilio)
+Import the workflows from workflows/ into n8n.
+Use ngrok to expose the webhooks for each bot.
+Send a message to any connected channel and the bot answers from your indexed PDFs.
 
-# Otros servicios (si aplican en tu canal)
-TWILIO_SID=
-TWILIO_TOKEN=
-TELEGRAM_BOT_TOKEN=
-SLACK_BOT_TOKEN=
-NGROK_AUTHTOKEN=
-
-
-
+Keys live only in your local .env — never commit real credentials.
